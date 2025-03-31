@@ -1,8 +1,11 @@
-use std::{env, fmt::Display, fs::{File}, io::BufRead, path::Path, process};
+use std::{env, fmt::Display, fs::{self, File}, io::BufRead, path::Path, process};
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use serde::Deserialize;
+use std::io::Write;
+
+pub const CARGO_TOML_SNIPPET: &str = include_str!("cargo-toml-snippet.toml");
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -20,6 +23,10 @@ enum Command {
 
 #[derive(Parser, Debug)]
 struct PProfArgs {
+    /// Add "profiling" profile to Cargo.toml (simple append)
+    #[clap(long)]
+    add: bool,
+
     /// Open the firefox profiler and exit
     #[clap(short, long)]
     open_firefox_profiler: bool,
@@ -71,6 +78,15 @@ fn open_firefox_profiler() {
     resolve_status(status);
 }
 
+fn add_to_cargo_toml() {
+    print_step("Appending snippet to Cargo.toml");
+    let mut file = resolve(fs::OpenOptions::new()
+        .append(true)
+        .open("Cargo.toml"));
+    eprintln!("Done");
+    resolve(write!(file, "\n{}", CARGO_TOML_SNIPPET));
+}
+
 
 fn main() {
     let Command::PProf(args) = Args::parse().command;
@@ -78,7 +94,11 @@ fn main() {
     if args.open_firefox_profiler {
         open_firefox_profiler();
         process::exit(0);
+    } else if args.add {
+        add_to_cargo_toml();
+        process::exit(0);
     }
+
 
     let cargo_path = resolve(env::var("CARGO"));
 
