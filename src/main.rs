@@ -50,7 +50,7 @@ fn resolve<T, E: Display>(result: Result<T, E>) -> T {
     match result {
         Ok(t) => t,
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("{}", format!("Error: {}", e).red());
             process::exit(1)
         },
     }
@@ -59,9 +59,9 @@ fn resolve<T, E: Display>(result: Result<T, E>) -> T {
 fn resolve_status(status: process::ExitStatus) {
     if !status.success() {
         if let Some(code) = status.code() {
-            let _ign: u32 = resolve(Err(format!("Cargo returned with exit code {}", code)));
+            let _ign: u32 = resolve(Err(format!("Process returned with exit code {}", code)));
         } else {
-            let _ign: u32 = resolve(Err("Cargo returned with an error".to_string()));
+            let _ign: u32 = resolve(Err("Process returned with an error".to_string()));
         }
     }
 }
