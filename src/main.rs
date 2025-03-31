@@ -1,4 +1,4 @@
-use std::{env, fmt::Display, fs::{self, File}, io::BufRead, path::Path, process};
+use std::{env, fmt::Display, fs::{File}, io::BufRead, path::Path, process};
 
 use clap::{Parser, Subcommand};
 use colored::Colorize;
@@ -54,7 +54,7 @@ fn resolve_status(status: process::ExitStatus) {
         if let Some(code) = status.code() {
             let _ign: u32 = resolve(Err(format!("Cargo returned with exit code {}", code)));
         } else {
-            let _ign: u32 = resolve(Err(format!("Cargo returned with an error")));
+            let _ign: u32 = resolve(Err("Cargo returned with an error".to_string()));
         }
     }
 }
@@ -73,9 +73,7 @@ fn open_firefox_profiler() {
 
 
 fn main() {
-    let args = match Args::parse().command {
-        Command::PProf(args) => args,
-    };
+    let Command::PProf(args) = Args::parse().command;
 
     if args.open_firefox_profiler {
         open_firefox_profiler();
@@ -93,11 +91,11 @@ fn main() {
         .output());
     resolve_status(cargo_out.status);
     let lines = cargo_out.stdout.lines()
-        .flatten();
+        .map_while(Result::ok);
     let messages = lines.flat_map(|l| serde_json::from_str::<CompilerMessage>(&l));
     let executable = match messages.last() {
         Some(msg) => msg.executable.clone(),
-        None => resolve(Err(format!("Could not find executable"))),
+        None => resolve(Err("Could not find executable".to_string())),
     };
     let dir = match Path::new(&executable).parent() {
         Some(dir) => dir,
